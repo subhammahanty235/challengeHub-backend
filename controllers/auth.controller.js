@@ -60,7 +60,7 @@ exports.verifyOtp = async (req, res) => {
         if (data.otp === parseInt(otp)) {
            
             //check if user already exists
-            const user = await User.findOne({ email: email })
+            const user = await User.findOne({ emailId: email })
             await TempOtp.deleteOne({ email: email })
             if (user) {
                 
