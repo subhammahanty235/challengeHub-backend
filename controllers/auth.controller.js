@@ -16,7 +16,7 @@ exports.generateOtp = async (req, res) => {
             await TempOtp.deleteOne({ email: email })
         }
 
-        const otp = Math.floor(100000 + Math.random() * 900000);
+        const otp = Math.floor(10000 + Math.random() * 90000);
         console.log(otp)
         const to = await TempOtp.create({
             email: email,
@@ -44,8 +44,8 @@ exports.verifyOtp = async (req, res) => {
             return res.status(400).json({ success: false, message: "Error occured" })
         
         }
-
-        if (toString(data.otp) !== toString(otp)) {
+        
+        if (data.otp !== parseInt(otp)) {
             return res.status(200).json({ success: false, message: "Wrong OTP" })
         }
 
@@ -57,7 +57,7 @@ exports.verifyOtp = async (req, res) => {
             });
         }
 
-        if (toString(data.otp) === toString(otp)) {
+        if (data.otp === parseInt(otp)) {
            
             //check if user already exists
             const user = await User.findOne({ email: email })
@@ -90,6 +90,8 @@ exports.verifyOtp = async (req, res) => {
 
 
             }
+        }else{
+            res.status(400).json({ success: false, token: token, message: "Wrong OTP" })
         }
 
 
