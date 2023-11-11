@@ -12,13 +12,21 @@ const CUConnectionSchema = mongoose.Schema({
         type: Date
     },
     expectedEnd: {
-        type: Date
+        type: Date , 
+        default: function (){
+            if(this.startDate && this.totalnoOfDays){
+                let endDate = new Date(this.startDate);
+                endDate.setDate(endDate.getDate() + this.totalnoOfDays);
+                return endDate;
+            }
+        }
     },
     totalnoOfDays: {
         type: Number,
     },
     completedTotaldays:{
         type:Number,
+        default:0
     },
     DayWisecompletedOn: [
         {

@@ -20,7 +20,7 @@ const ChallengeSchema = mongoose.Schema({
     },
     totalCrowd:{
         type:Number,
-        default:0
+        default:1
     },
     visibility:{
         type:String,

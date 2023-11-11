@@ -14,6 +14,7 @@ app.use(express.json());
 
 app.use("/api/auth" , require('./routes/auth.route'))
 app.use('/api/user' , require('./routes/user.route'))
+app.use('/api/challenge' , require('./routes/challenge.route'))
 
 app.listen(5000 , ()=>{
     console.log("App is running")
