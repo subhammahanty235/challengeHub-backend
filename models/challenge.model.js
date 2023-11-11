@@ -13,18 +13,30 @@ const ChallengeSchema = mongoose.Schema({
     },
     noOfdays:{
         type:Number,
+        default:0
     },
     created:{
         type:Date
     },
     totalCrowd:{
-        type:Number
+        type:Number,
+        default:0
+    },
+    visibility:{
+        type:String,
+        enum:{
+            values:['Private' , 'Public' , 'Protected'],
+            message:'{ VALUE } is not supported'
+        },
+        default:'Public'
     },
     rating:{
-        type:Number
+        type:Number,
+        default:0.0
     },
     totalCompleted:{        //total crowd who has completed the challenge
-        type:Number
+        type:Number,
+        default:0
     },
     
 })
