@@ -45,8 +45,35 @@ exports.createChallenge = async (req, res) => {
 exports.findAllChallenges = async (req, res) => {
     try {
         //it will only fetch the public and protected challenges,
+        const userId = req.params.userId
+        
+        // const challenges = await Challenge.find({ visibility: { $ne: 'Private' } })
+        const challenges = await Challenge.aggregate([
+            {
+                $match: {
+                    visibility: {$ne: 'Private'}
+                },
 
-        const challenges = await Challenge.find({ visibility: { $ne: 'Private' } })
+            },
+            {
+                $lookup:{
+                    from:'cu_connections',
+                    localField:'_id',
+                    foreignField:'challengeId',
+                    as: 'connections'
+                }
+            },
+            {
+                $match:{
+                    'connections.userId':{$ne: mongoose.Types.ObjectId.createFromHexString(userId)}
+                }
+            },
+            {
+                $project:{
+                    connections:0
+                }
+            }
+        ])
 
         if (challenges) {
             return res.status(200).json({ success: true, challenges: challenges, message: 'Challenges Fetched Successfully' })
