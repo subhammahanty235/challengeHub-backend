@@ -5,7 +5,7 @@ const UCConnection = require('../models/challenge_user_connection.model')
 exports.createChallenge = async (req, res) => {
     try {
         const { challengeData, createdBy } = req.body;
-
+        console.log(challengeData)
         if (challengeData.name === '') {
             return res.status(400).json({ success: false, message: "Please provide a name" })
         }
@@ -13,7 +13,7 @@ exports.createChallenge = async (req, res) => {
         const tempData = {
             name: challengeData.name,
             description: challengeData.description !== null ? challengeData.description : '',
-            noOfdays: challengeData.noOfdays !== null ? challengeData.noOfdays : 0,
+            noOfdays: challengeData.noOfdays !== null ? challengeData.noOfdays : 1,
             created: Date.now(),
             visibility: challengeData.visibility,
             creator: createdBy
@@ -110,7 +110,10 @@ exports.findChallengesofUser = async (req, res) => {
                     _id: 0,
                     challenge: 1,
                     challengeStatus: '$challengeStatus',
-                    completedTotaldays: '$completedTotaldays'
+                    completedTotaldays: '$completedTotaldays',
+                    DayWisecompletedOn:'$DayWisecompletedOn',
+                    expectedEnd:'$expectedEnd',
+                    startDate:'$startDate'
                 }
             }
         ])
@@ -119,6 +122,9 @@ exports.findChallengesofUser = async (req, res) => {
             const challengeData = item.challenge;
             challengeData.challengeStatus = item.challengeStatus;
             challengeData.completedTotaldays = item.completedTotaldays;
+            challengeData.DayWisecompletedOn = item.DayWisecompletedOn;
+            challengeData.expectedEnd = item.expectedEnd;
+            challengeData.startDate = item.startDate;
             return challengeData;
         });
         res.status(200).json({ success: true, challenges: challenges, message: "Challenges fetched successfully" })

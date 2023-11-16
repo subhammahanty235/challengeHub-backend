@@ -57,6 +57,9 @@ const CUConnectionSchema = mongoose.Schema({
 
 })
 
+
+
 const CUConnection = mongoose.model("cu_connections" , CUConnectionSchema);
 
-module.exports = CUConnection
+
+module.exports = CUConnection;
