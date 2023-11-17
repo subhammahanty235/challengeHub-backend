@@ -136,7 +136,7 @@ exports.findChallengesofUser = async (req, res) => {
 exports.marktaskasDone = async (req, res) => {
     try {
         const challengeId = req.params.cId;
-        const userId = req.params.userId
+        const userId = req.user.id
         const currentDate = Date.now()
 
         //get the data from the db using the relevant cuId
