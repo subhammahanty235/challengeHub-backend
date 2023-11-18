@@ -11,12 +11,16 @@ const CUConnectionSchema = mongoose.Schema({
     startDate: {
         type: Date
     },
+    includeStartDate:{
+        type:Boolean,
+        default:false
+    },
     expectedEnd: {
         type: Date , 
         default: function (){
             if(this.startDate && this.totalnoOfDays){
                 let endDate = new Date(this.startDate);
-                endDate.setDate(endDate.getDate() + this.totalnoOfDays);
+                endDate.setDate(endDate.getDate() + this.includeStartDate === true?this.totalnoOfDays-1 : this.totalnoOfDays);
                 return endDate;
             }
         }
@@ -46,10 +50,10 @@ const CUConnectionSchema = mongoose.Schema({
 
     challengeStatus:{
         status:{
-            type:Boolean,
-            default:false
+            type:Number,
+            default:0,   //0 ---> Ongoing , 1:Completed , 2:Failed
         },
-        completedon:{
+        statusChanged:{
             type:Date
         }
     }

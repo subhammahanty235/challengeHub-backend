@@ -4,7 +4,7 @@ const UCConnection = require('../models/challenge_user_connection.model')
 
 exports.createChallenge = async (req, res) => {
     try {
-        const { challengeData, createdBy } = req.body;
+        const { challengeData, createdBy, includeStartDate } = req.body;
         console.log(challengeData)
         if (challengeData.name === '') {
             return res.status(400).json({ success: false, message: "Please provide a name" })
@@ -28,6 +28,7 @@ exports.createChallenge = async (req, res) => {
                 userId: createdBy,
                 startDate: Date.now(),
                 totalnoOfDays: result.noOfdays,
+                includeStartDate:includeStartDate
             })
 
             res.status(200).json({ success: true, message: 'Challenge created successfully' })
