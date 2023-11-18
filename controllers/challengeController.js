@@ -168,9 +168,22 @@ exports.marktaskasDone = async (req, res) => {
                     }
                 }
             })
-            res.status(200).json({ success: true, message: "Marked as Complted" })
+
+            const response = await UCConnection.findOne(
+                {
+                    _id: cuData._id,
+                    "DayWisecompletedOn.dayNumber": dayDifference
+                },
+                {
+                    "DayWisecompletedOn.$": 1
+                }
+            );
+
+            res.status(200).json({ success: true, message: "Marked as Complted", newData: response.DayWisecompletedOn[0]})
         } else {
-            res.status(400).json({ success: false, message: "Already Marked!" })
+
+
+            res.status(400).json({ success: false, message: "Already Marked!"})
         }
 
     } catch (error) {
