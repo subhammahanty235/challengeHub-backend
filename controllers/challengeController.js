@@ -14,7 +14,7 @@ exports.createChallenge = async (req, res) => {
             name: challengeData.name,
             description: challengeData.description !== null ? challengeData.description : '',
             noOfdays: challengeData.noOfdays !== null ? challengeData.noOfdays : 1,
-            created: Date.now(),
+            created: new Date(),
             visibility: challengeData.visibility,
             creator: createdBy
         }
@@ -26,7 +26,7 @@ exports.createChallenge = async (req, res) => {
             await UCConnection.create({
                 challengeId: result.id,
                 userId: createdBy,
-                startDate: Date.now(),
+                startDate: new Date(),
                 totalnoOfDays: result.noOfdays,
                 includeStartDate:includeStartDate
             })
@@ -138,7 +138,7 @@ exports.marktaskasDone = async (req, res) => {
     try {
         const challengeId = req.params.cId;
         const userId = req.user.id
-        const currentDate = Date.now()
+        const currentDate = new Date();
 
         //get the data from the db using the relevant cuId
 
@@ -163,7 +163,7 @@ exports.marktaskasDone = async (req, res) => {
             await UCConnection.findByIdAndUpdate(cuData._id, {
                 $push: {
                     DayWisecompletedOn: {
-                        date: Date.now(),
+                        date: new Date(),
                         dayNumber: dayDifference,
                         status: true,
                     }
