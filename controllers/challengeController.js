@@ -1,11 +1,11 @@
 const { default: mongoose } = require('mongoose');
 const Challenge = require('../models/challenge.model')
 const UCConnection = require('../models/challenge_user_connection.model')
-
+const SecurityKey = require('../models/security_passwords.model')
 exports.createChallenge = async (req, res) => {
     try {
-        const { challengeData, createdBy, includeStartDate } = req.body;
-        console.log(challengeData)
+        const { challengeData, includeStartDate } = req.body;
+        const createdBy = req.user.id;
         if (challengeData.name === '') {
             return res.status(400).json({ success: false, message: "Please provide a name" })
         }
@@ -46,7 +46,7 @@ exports.createChallenge = async (req, res) => {
 exports.findAllChallenges = async (req, res) => {
     try {
         //it will only fetch the public and protected challenges,
-        const userId = req.params.userId
+        const userId = req.user.id
 
         // const challenges = await Challenge.find({ visibility: { $ne: 'Private' } })
         const challenges = await Challenge.aggregate([
@@ -89,7 +89,7 @@ exports.findAllChallenges = async (req, res) => {
 }
 
 exports.findChallengesofUser = async (req, res) => {
-    const userId = req.params.userId;
+    const userId = req.user.id;
     try {
         const result = await UCConnection.aggregate([
             {
@@ -114,7 +114,8 @@ exports.findChallengesofUser = async (req, res) => {
                     completedTotaldays: '$completedTotaldays',
                     DayWisecompletedOn: '$DayWisecompletedOn',
                     expectedEnd: '$expectedEnd',
-                    startDate: '$startDate'
+                    startDate: '$startDate',
+                    includeStartDate: '$includeStartDate'
                 }
             }
         ])
@@ -126,6 +127,7 @@ exports.findChallengesofUser = async (req, res) => {
             challengeData.DayWisecompletedOn = item.DayWisecompletedOn;
             challengeData.expectedEnd = item.expectedEnd;
             challengeData.startDate = item.startDate;
+            challengeData.includeStartDate = item.includeStartDate
             return challengeData;
         });
         res.status(200).json({ success: true, challenges: challenges, message: "Challenges fetched successfully" })
@@ -189,5 +191,67 @@ exports.marktaskasDone = async (req, res) => {
 
     } catch (error) {
         res.status(400).json({ success: false, message: error.message })
+    }
+}
+
+exports.joinChallenge = async (req,res) => {
+    try {
+        const {data} = req.body;
+        const userID = req.user.id;
+
+        //check if user has already taken the challenge
+        const checkUser = await UCConnection.findOne({ $and: [{ userId: userID }, { challengeId: data.challengeId }] });
+        if(checkUser){
+           return res.status(400).json({success:false, message:"You have already participated"})
+        }
+
+        //fetch the challenge to check if challenge is protected, then we will do varifications
+        const challenge = await Challenge.findOne({_id:data.challengeId});
+        if(!challenge){
+            return res.status(404).json({success:false, message:"Challenge not found"})
+        }
+
+        let isProtected = false;
+        if(challenge.visibility === 'Protected'){
+            isProtected = true;
+        }
+        let verified = false;
+        if(isProtected){
+            const security = await SecurityKey.findOne({challengeId :data.challengeId});
+            if(!data.securityKey){
+                return res.status(404).json({success:false, message:"Please provide a security key"})
+            }
+            if(security.securityKey === data.securityKey){
+                verified = true;
+            }else{
+                return res.status(400).json({success:false, message:"Wrong Key!"})
+            }
+        }
+
+        if(verified){
+            await UCConnection.create({
+                challengeId: data.challengeId,
+                userId: userID,
+                startDate: new Date(),
+                totalnoOfDays: data.totalnoOfDays,
+                includeStartDate:data.includeStartDate,
+            }) 
+
+            //update the challenge's total participants
+
+            await Challenge.findByIdAndUpdate(data.challengeId , {
+               $inc: {
+                totalCrowd:1
+               }
+            })
+
+        }
+        res.status(200).json({success:true, message:"Successfully Joined"})
+
+
+
+
+    } catch (error) {
+        
     }
 }
