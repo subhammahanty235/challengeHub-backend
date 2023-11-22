@@ -198,7 +198,7 @@ exports.joinChallenge = async (req,res) => {
     try {
         const {data} = req.body;
         const userID = req.user.id;
-
+        console.log(data);
         //check if user has already taken the challenge
         const checkUser = await UCConnection.findOne({ $and: [{ userId: userID }, { challengeId: data.challengeId }] });
         if(checkUser){
@@ -228,7 +228,7 @@ exports.joinChallenge = async (req,res) => {
             }
         }
 
-        if(verified){
+        if(((isProtected === false && verified === false) || (isProtected === true && verified === true))){
             await UCConnection.create({
                 challengeId: data.challengeId,
                 userId: userID,
@@ -245,8 +245,8 @@ exports.joinChallenge = async (req,res) => {
                }
             })
 
+            res.status(200).json({success:true, message:"Successfully Joined"})
         }
-        res.status(200).json({success:true, message:"Successfully Joined"})
 
 
 

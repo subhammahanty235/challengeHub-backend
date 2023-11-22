@@ -2,8 +2,8 @@ const User = require('../models/user.model')
 
 exports.createProfile = async(req,res) => {
     try {
-        const {profileData , userId} = req.body
-
+        const {profileData} = req.body
+        const userId = req.user.id;
         //check if profile exists or not
         const user = await User.findOne({_id:userId});
        
