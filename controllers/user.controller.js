@@ -27,3 +27,17 @@ exports.createProfile = async(req,res) => {
         
     }
 }
+
+exports.getuser = async(req, res) =>{
+    try {
+        const userId = req.user.id;
+        const user = await User.findOne({_id:userId});
+        if(!user){
+            return res.status(400).json({success:false , message:"User not exists"});
+        }
+        return res.status(200).json({success:true ,user:user, message:"Profie fetched successfully"})
+
+    } catch (error) {
+        return res.status(400).json({success:false , message:error.message});
+    }
+}

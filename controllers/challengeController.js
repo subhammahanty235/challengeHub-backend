@@ -2,6 +2,7 @@ const { default: mongoose } = require('mongoose');
 const Challenge = require('../models/challenge.model')
 const UCConnection = require('../models/challenge_user_connection.model')
 const SecurityKey = require('../models/security_passwords.model')
+const {dayDifferenceCalculator} = require('../utils/dateHelpers')
 exports.createChallenge = async (req, res) => {
     try {
         const { challengeData, includeStartDate } = req.body;
@@ -28,7 +29,7 @@ exports.createChallenge = async (req, res) => {
                 userId: createdBy,
                 startDate: new Date(),
                 totalnoOfDays: result.noOfdays,
-                includeStartDate:includeStartDate
+                includeStartDate: includeStartDate
             })
 
             res.status(200).json({ success: true, message: 'Challenge created successfully' })
@@ -140,18 +141,23 @@ exports.marktaskasDone = async (req, res) => {
     try {
         const challengeId = req.params.cId;
         const userId = req.user.id
-        const currentDate = new Date();
+        
 
         //get the data from the db using the relevant cuId
 
         const cuData = await UCConnection.findOne({ $and: [{ userId: userId }, { challengeId: challengeId }] })
         if (!cuData) {
+            
+
             return res.status(400).json({ success: false, message: "Can't find the relevant Challenge" })
         }
         let startDate = cuData.startDate;
-        startDate = new Date(startDate);
-        const timeDifference = currentDate - startDate;
-        const dayDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
+        let dayDifference = dayDifferenceCalculator(startDate)
+       
+        // startDate = new Date(startDate);
+        // const timeDifference = currentDate - startDate;
+        // const dayDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
+
         // check if data with the same day number already exists or not
 
         const checkData = await UCConnection.findOne({
@@ -182,76 +188,73 @@ exports.marktaskasDone = async (req, res) => {
                 }
             );
 
-            res.status(200).json({ success: true, message: "Marked as Complted", newData: response.DayWisecompletedOn[0]})
+            res.status(200).json({ success: true, message: "Marked as Complted", newData: response.DayWisecompletedOn[0] })
         } else {
-
-
-            res.status(400).json({ success: false, message: "Already Marked!"})
+            res.status(400).json({ success: false, message: "Already Marked!" })
         }
 
     } catch (error) {
+        console.log("catch_");
+        console.log(error.message)
         res.status(400).json({ success: false, message: error.message })
     }
 }
 
-exports.joinChallenge = async (req,res) => {
+exports.joinChallenge = async (req, res) => {
     try {
-        const {data} = req.body;
+        const { data } = req.body;
         const userID = req.user.id;
-        console.log(data);
+        
         //check if user has already taken the challenge
         const checkUser = await UCConnection.findOne({ $and: [{ userId: userID }, { challengeId: data.challengeId }] });
-        if(checkUser){
-           return res.status(400).json({success:false, message:"You have already participated"})
+        if (checkUser) {
+            return res.status(400).json({ success: false, message: "You have already participated" })
         }
 
         //fetch the challenge to check if challenge is protected, then we will do varifications
-        const challenge = await Challenge.findOne({_id:data.challengeId});
-        if(!challenge){
-            return res.status(404).json({success:false, message:"Challenge not found"})
+        const challenge = await Challenge.findOne({ _id: data.challengeId });
+        if (!challenge) {
+            return res.status(404).json({ success: false, message: "Challenge not found" })
         }
 
         let isProtected = false;
-        if(challenge.visibility === 'Protected'){
+        if (challenge.visibility === 'Protected') {
             isProtected = true;
         }
         let verified = false;
-        if(isProtected){
-            const security = await SecurityKey.findOne({challengeId :data.challengeId});
-            if(!data.securityKey){
-                return res.status(404).json({success:false, message:"Please provide a security key"})
+        if (isProtected) {
+            const security = await SecurityKey.findOne({ challengeId: data.challengeId });
+            if (!data.securityKey) {
+                return res.status(404).json({ success: false, message: "Please provide a security key" })
             }
-            if(security.securityKey === data.securityKey){
+            if (security.securityKey === data.securityKey) {
                 verified = true;
-            }else{
-                return res.status(400).json({success:false, message:"Wrong Key!"})
+            } else {
+                return res.status(400).json({ success: false, message: "Wrong Key!" })
             }
         }
 
-        if(((isProtected === false && verified === false) || (isProtected === true && verified === true))){
+        if (((isProtected === false && verified === false) || (isProtected === true && verified === true))) {
             await UCConnection.create({
                 challengeId: data.challengeId,
                 userId: userID,
                 startDate: new Date(),
                 totalnoOfDays: data.totalnoOfDays,
-                includeStartDate:data.includeStartDate,
-            }) 
+                includeStartDate: data.includeStartDate,
+            })
 
             //update the challenge's total participants
 
-            await Challenge.findByIdAndUpdate(data.challengeId , {
-               $inc: {
-                totalCrowd:1
-               }
+            await Challenge.findByIdAndUpdate(data.challengeId, {
+                $inc: {
+                    totalCrowd: 1
+                }
             })
 
-            res.status(200).json({success:true, message:"Successfully Joined"})
+            res.status(200).json({ success: true, message: "Successfully Joined" })
         }
 
-
-
-
     } catch (error) {
-        
+
     }
 }
