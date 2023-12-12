@@ -47,6 +47,9 @@ const CUConnectionSchema = mongoose.Schema({
             status: {
                 type: Boolean,
                 default: false
+            },
+            notes:{
+                type:String,
             }
 
         }
@@ -59,8 +62,19 @@ const CUConnectionSchema = mongoose.Schema({
         },
         statusChanged: {
             type: Date
+        },
+        score:{
+            type:Number,
         }
+    },
+    selectedLevel:{
+        type:String,
+        enum:{
+            values:["Easy" , "Medium" , "Hard" , "Custom"]
+        },
+        default:"Medium"
     }
+
 
 
 })
