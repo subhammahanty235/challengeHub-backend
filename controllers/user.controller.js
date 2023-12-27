@@ -1,3 +1,4 @@
+const { accountCreatedMail } = require('../emailSystem/sendLoginEmail');
 const User = require('../models/user.model')
 
 exports.createProfile = async(req,res) => {
@@ -16,6 +17,7 @@ exports.createProfile = async(req,res) => {
         if(response){
            const responsein =  await User.findByIdAndUpdate(response.id , {profileCreated:true , joined:new Date()})
             if(responsein){
+                accountCreatedMail(profileData.name , user.emailId)
                 return res.status(200).json({success:true , message:"Profie created successfully"})
             }
         }else{

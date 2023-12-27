@@ -1,3 +1,4 @@
+const { sendOtpMail } = require("../emailSystem/sendLoginEmail");
 const TempOtp = require("../models/tempotp.model")
 const User = require("../models/user.model")
 const jwt = require("jsonwebtoken");
@@ -24,6 +25,7 @@ exports.generateOtp = async (req, res) => {
             created: new Date(Date.now()),
             expiry: new Date(Date.now() + 2 * 60 * 1000)
         })
+        sendOtpMail(email, otp)
         return res.status(200).json({
             success: true,
             too: to,

@@ -25,7 +25,7 @@ const UserSchema = mongoose.Schema({
     },
     joined:{
         type:Date
-    }
+    },
 })
 
 const user = mongoose.model("user" , UserSchema);

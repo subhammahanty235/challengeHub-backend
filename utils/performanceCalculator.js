@@ -69,7 +69,7 @@ exports.performanceCalcAlgorithm = (cuData) => {
 
         // <----------
         let c = 0;
-        for (var i = 0; i <= (sdTocd < totalnoOfDays ? sdTocd : totalnoOfDays); i++) {
+        for (var i = 0; i < (sdTocd < totalnoOfDays ? sdTocd : totalnoOfDays); i++) {
 
             dayNumbers.has(i) ? counts[1]++ : counts[0]++;
             c++;
@@ -103,8 +103,11 @@ exports.performanceCalcAlgorithm = (cuData) => {
             let score1 = max_score_till_day * num1;
             let score2 = num0 * (max_score_till_day * 0.25);
             if (num0 >= 2 * num1) {
+                
                 console.log("condition 1 is satisfying")
-                score2 = num0 * (max_score_till_day * 0.8);
+                let calculatedScore = score1 ;
+                return Math.round(calculatedScore)
+                // score2 = num0 * (max_score_till_day * 0.8);
             } else if (num0 > num1) {
                 console.log("condition two is satisfying")
                 score2 = num0 * (max_score_till_day * 0.4)
