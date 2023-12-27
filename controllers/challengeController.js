@@ -1,7 +1,13 @@
 const { default: mongoose } = require('mongoose');
 const Challenge = require('../models/challenge.model')
+const User = require("../models/user.model")
 const UCConnection = require('../models/challenge_user_connection.model')
 const SecurityKey = require('../models/security_passwords.model')
+const { dayDifferenceCalculator, checkExceeded, UTCtoIST } = require('../utils/dateHelpers');
+const { performanceCalcAlgorithm } = require('../utils/performanceCalculator');
+const moment = require('moment');
+const { joinedChallengeEmail } = require('../emailSystem/challengeEmail');
+
 exports.createChallenge = async (req, res) => {
     try {
         const { challengeData, includeStartDate } = req.body;
@@ -28,16 +34,13 @@ exports.createChallenge = async (req, res) => {
                 userId: createdBy,
                 startDate: new Date(),
                 totalnoOfDays: result.noOfdays,
-                includeStartDate:includeStartDate
+                includeStartDate: includeStartDate
             })
 
             res.status(200).json({ success: true, message: 'Challenge created successfully' })
         } else {
             res.status(400).json({ success: false, message: "Can't create the challenge" })
         }
-
-
-
     } catch (error) {
         res.status(500).json({ success: false, message: error.message })
     }
@@ -75,14 +78,11 @@ exports.findAllChallenges = async (req, res) => {
                 }
             }
         ])
-
         if (challenges) {
             return res.status(200).json({ success: true, challenges: challenges, message: 'Challenges Fetched Successfully' })
         } else {
             res.status(400).json({ success: false, message: "Can't fetch the challenge" })
         }
-
-
     } catch (error) {
         res.status(400).json({ success: false, message: error.message })
     }
@@ -118,7 +118,7 @@ exports.findChallengesofUser = async (req, res) => {
                     includeStartDate: '$includeStartDate'
                 }
             }
-        ])
+        ]).sort({ startDate: -1 }).exec()
 
         const challenges = result.map((item) => {
             const challengeData = item.challenge;
@@ -128,6 +128,15 @@ exports.findChallengesofUser = async (req, res) => {
             challengeData.expectedEnd = item.expectedEnd;
             challengeData.startDate = item.startDate;
             challengeData.includeStartDate = item.includeStartDate
+            challengeData.performanceScore = performanceCalcAlgorithm({
+
+                startDate: item.startDate,
+                includeStartDate: item.includeStartDate,
+                DayWisecompletedOn: item.DayWisecompletedOn,
+                totalnoOfDays: item.challenge.noOfdays,
+                name: item.challenge.name,
+
+            })
             return challengeData;
         });
         res.status(200).json({ success: true, challenges: challenges, message: "Challenges fetched successfully" })
@@ -140,19 +149,34 @@ exports.marktaskasDone = async (req, res) => {
     try {
         const challengeId = req.params.cId;
         const userId = req.user.id
-        const currentDate = new Date();
+        const { notes } = req.body;
+
+
 
         //get the data from the db using the relevant cuId
 
         const cuData = await UCConnection.findOne({ $and: [{ userId: userId }, { challengeId: challengeId }] })
         if (!cuData) {
+
+
             return res.status(400).json({ success: false, message: "Can't find the relevant Challenge" })
         }
         let startDate = cuData.startDate;
-        startDate = new Date(startDate);
-        const timeDifference = currentDate - startDate;
-        const dayDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
-        // check if data with the same day number already exists or not
+        let nextDate = new Date(cuData.startDate);      //if includeStartDate is false
+        let stdDay = new Date(startDate)
+        nextDate.setDate(stdDay.getDate() + 1);
+
+
+
+
+
+        let dayDifference = dayDifferenceCalculator(cuData.includeStartDate === true ? startDate : nextDate);
+
+        // startDate = new Date(startDate);
+        // const timeDifference = currentDate - startDate;
+        // const dayDifference = Math.floor(timeDifference / (1000 * 60 * 60 * 24))
+
+        // check if data with the same day number already exists or no t
 
         const checkData = await UCConnection.findOne({
             $and: [
@@ -168,6 +192,7 @@ exports.marktaskasDone = async (req, res) => {
                         date: new Date(),
                         dayNumber: dayDifference,
                         status: true,
+                        notes: !notes ? '' : notes
                     }
                 }
             })
@@ -182,76 +207,292 @@ exports.marktaskasDone = async (req, res) => {
                 }
             );
 
-            res.status(200).json({ success: true, message: "Marked as Complted", newData: response.DayWisecompletedOn[0]})
+            res.status(200).json({ success: true, message: "Marked as Complted", newData: response.DayWisecompletedOn[0] })
         } else {
-
-
-            res.status(400).json({ success: false, message: "Already Marked!"})
+            res.status(400).json({ success: false, message: "Already Marked!" })
         }
 
     } catch (error) {
+        console.log("catch_");
+        console.log(error.message)
         res.status(400).json({ success: false, message: error.message })
     }
 }
 
-exports.joinChallenge = async (req,res) => {
+exports.addNote = async (req, res) => {
     try {
-        const {data} = req.body;
+
+        const challengeId = req.params.cuId;
+        const userId = req.user.id;
+        const { note } = req.body;
+        const cuData = await UCConnection.findOne({ $and: [{ userId: userId }, { challengeId: challengeId }] })
+        if (!cuData) {
+            return res.status(400).json({ success: false, message: "Can't find the relevant Challenge" })
+        }
+       
+
+        let startDate = cuData.startDate;
+        let nextDate = new Date(cuData.startDate);      //if includeStartDate is false
+        let stdDay = new Date(startDate)
+        nextDate.setDate(stdDay.getDate() + 1);
+
+
+        let dayDifference = dayDifferenceCalculator(cuData.includeStartDate === true ? startDate : nextDate);
+        // let dayDifference = dayDifferenceCalculator(startDate)
+
+        const ucc = await UCConnection.findOneAndUpdate(
+            {
+                userId: userId,
+                challengeId: challengeId,
+                "DayWisecompletedOn.dayNumber": dayDifference,
+            },
+            {
+                $set: {
+                    "DayWisecompletedOn.$.notes": note,
+                }
+            },
+            { new: true },
+        )
+
+        console.log(ucc.DayWisecompletedOn)
+        res.status(200).json({ success: true, data: ucc.DayWisecompletedOn });
+
+
+    } catch (error) {
+
+    }
+}
+
+exports.getCUData = async (req, res) => {
+    const userId = req.params.id;
+    const resp = await UCConnection.find({ userId: userId });
+    res.send(resp);
+}
+
+exports.joinChallenge = async (req, res) => {
+    try {
+        const { data } = req.body;
         const userID = req.user.id;
 
         //check if user has already taken the challenge
         const checkUser = await UCConnection.findOne({ $and: [{ userId: userID }, { challengeId: data.challengeId }] });
-        if(checkUser){
-           return res.status(400).json({success:false, message:"You have already participated"})
+        if (checkUser) {
+            return res.status(400).json({ success: false, message: "You have already participated" })
         }
 
+        //get the data of user
+        const user = await User.findOne({_id:userID})
+
         //fetch the challenge to check if challenge is protected, then we will do varifications
-        const challenge = await Challenge.findOne({_id:data.challengeId});
-        if(!challenge){
-            return res.status(404).json({success:false, message:"Challenge not found"})
+        const challenge = await Challenge.findOne({ _id: data.challengeId });
+        if (!challenge) {
+            return res.status(404).json({ success: false, message: "Challenge not found" })
         }
 
         let isProtected = false;
-        if(challenge.visibility === 'Protected'){
+        if (challenge.visibility === 'Protected') {
             isProtected = true;
         }
         let verified = false;
-        if(isProtected){
-            const security = await SecurityKey.findOne({challengeId :data.challengeId});
-            if(!data.securityKey){
-                return res.status(404).json({success:false, message:"Please provide a security key"})
+        if (isProtected) {
+            const security = await SecurityKey.findOne({ challengeId: data.challengeId });
+            if (!data.securityKey) {
+                return res.status(404).json({ success: false, message: "Please provide a security key" })
             }
-            if(security.securityKey === data.securityKey){
+            if (security.securityKey === data.securityKey) {
                 verified = true;
-            }else{
-                return res.status(400).json({success:false, message:"Wrong Key!"})
+            } else {
+                return res.status(400).json({ success: false, message: "Wrong Key!" })
             }
         }
 
-        if(verified){
+        if (((isProtected === false && verified === false) || (isProtected === true && verified === true))) {
             await UCConnection.create({
                 challengeId: data.challengeId,
                 userId: userID,
                 startDate: new Date(),
                 totalnoOfDays: data.totalnoOfDays,
-                includeStartDate:data.includeStartDate,
-            }) 
+                includeStartDate: data.includeStartDate,
+            })
 
             //update the challenge's total participants
 
-            await Challenge.findByIdAndUpdate(data.challengeId , {
-               $inc: {
-                totalCrowd:1
-               }
+            await Challenge.findByIdAndUpdate(data.challengeId, {
+                $inc: {
+                    totalCrowd: 1
+                }
             })
 
+
+
+            console.log(checkUser)
+            console.log(checkUser)
+            console.log(challenge)
+            console.log(user)
+            console.log(user)
+
+            joinedChallengeEmail(user.name , user.emailId , challenge)
+
+            res.status(200).json({ success: true, message: "Successfully Joined" })
         }
-        res.status(200).json({success:true, message:"Successfully Joined"})
-
-
-
 
     } catch (error) {
-        
+
     }
 }
+
+exports.checkChallenges = async (req, res) => {
+    try {
+        const userID = req.user.id;
+        // const userID = req.params.id
+
+        //fetch all data from CUConnections whose completion status is inprogress;
+        const cudata = await UCConnection.find({
+            userId: userID,
+            'challengeStatus.status': 0
+        })
+
+        // now Traverse the cudata and check if currentData exceeded any of the expectedEnds;
+        let dataArr = [];
+        for (var i = 0; i < cudata.length; i++) {
+
+
+            if (checkExceeded(cudata[i].expectedEnd) === 2) {
+                //check the performance to mark the challenge with correct status
+                let score = await performanceCalcAlgorithm(cudata[i]);
+
+                if (score > 60) {
+                    await UCConnection.findByIdAndUpdate(cudata[i]._id, {
+                        challengeStatus: {
+                            status: 1,
+                            statusChanged: moment(cudata.expectedEnd).add(1, 'days'),
+                            score: score,
+                        }
+                    })
+                    dataArr.push({ id: cudata[i]._id, score: score, status: "Passed" })
+                }
+                else {
+                    await UCConnection.findByIdAndUpdate(cudata[i]._id, {
+                        challengeStatus: {
+                            status: 2,
+                            statusChanged: moment(cudata.expectedEnd).add(1, 'days'),
+                            score: score,
+                        }
+                    },
+                    )
+                    dataArr.push({ id: cudata[i]._id, score: score, status: "Passed" })
+                }
+            } else {
+
+            }
+        }
+
+        res.send(dataArr)
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+exports.getDetailedDWCData = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const challengeId = req.params.cid;
+        const cuData = await UCConnection.findOne({ $and: [{ userId: userId }, { challengeId: challengeId }] });
+        if (!cuData) {
+            return res.status(400).json({ success: false, message: "You have already participated" })
+        }
+
+        console.log("11111")
+        console.log(cuData.startDate)
+
+        const startDate = UTCtoIST(cuData.startDate);
+
+        console.log("22222")
+
+        const currentDate = UTCtoIST(new Date());
+        const includeStartDay = cuData.includeStartDate;
+        const dwcDatas = cuData.DayWisecompletedOn;
+        const totalNoDays = cuData.totalnoOfDays;
+
+        console.log("333333")
+
+
+        if ((startDate === currentDate) && includeStartDay === false) {
+            res.status(200).json({ success: true, dataStatus: false, message: "No Data yet" })
+        }
+
+        console.log("4444444")
+
+        // // now calculate how many days from the startDate to currentDate user has completed the tasks
+        const dayNumbers = new Set(dwcDatas.map((obj) => obj.dayNumber));
+        // console.log("1")
+
+        // const nextDay = new Date(startDate);
+        console.log("44444.252525")
+        console.log(startDate)
+        console.log(new Date(startDate))
+        const nextDay = startDate.clone().add(1, 'day');
+        console.log("444444.55555")
+        console.log("-------=====-------");
+        // console.log(cuData.startDate.getDate() + 1);
+        const nextDate = new Date(cuData.startDate);
+        const stdday = new Date(cuData.startDate);
+        nextDate.setDate(stdday.getDate() + 1);
+        console.log(new Date(cuData.startDate))
+
+        console.log("tester 1111"+(includeStartDay ))
+        console.log( cuData.startDate)
+        const sdTocd = dayDifferenceCalculator(includeStartDay === true ? new Date(cuData.startDate) : nextDate);  //startDate to currentdate difference
+        // const sdTocd = dayDifferenceCalculator(includeStartDay === true ? "Con 1":"con2");  //startDate to currentdate difference
+        
+        console.log("sdtocd" + sdTocd)
+        console.log("555555")
+        let allDates = [];
+        console.log("--------->")
+        console.log(startDate);
+        console.log(nextDay);
+
+        console.log(includeStartDay)
+        console.log("<---------")
+        let date = includeStartDay === true ? startDate : nextDay;
+        console.log(date)
+        const stdr = startDate.toISOString().split('T')[0];
+        console.log(stdr)
+        const formattedDatew = date.toISOString().split('T')[0];
+        console.log(formattedDatew)
+        const formattedDatee = nextDay.toISOString().split('T')[0];
+        console.log(formattedDatee)
+
+        // console.log(date)
+
+        // console.log("2")
+        console.log(sdTocd)
+        for (let i = 0; i < (sdTocd < totalNoDays ? sdTocd + 1 : totalNoDays + 1); i++) {
+
+            const formattedDate = date.toISOString().split('T')[0];
+            console.log(formattedDate)
+            const dwcData = dwcDatas.find((data) => data.dayNumber === i)
+            // console.log("2.1")
+            let notes;
+            if (dwcData !== undefined) {
+                notes = dwcData.notes;
+                // console.log("2.2 if-true")
+            } else {
+                notes = null;
+                // console.log("2.2 if-false")
+            }
+
+            allDates.push({ date: formattedDate, dayStatus: dayNumbers.has(i) ? 1 : 0, index: i, notes: notes });
+            // console.log("2.4")
+            date = date.clone().add(1, 'day')
+            // date.setDate(date.getDate() + 1);
+        }
+        // console.log("3")
+
+        res.status(200).json({ success: true, dataStatus: true, message: "Data processed", dates: allDates })
+
+    } catch (error) {
+
+    }
+}
+

@@ -2,7 +2,8 @@ const jwt = require("jsonwebtoken")
 
 exports.verifyToken = (req,res,next) => {
     const authToken = req.header("token");
-    console.log(authToken)
+
+    // console.log(authToken)
     if(!authToken){
         res.status(404).json({success:false, message:"Please provide a token"})
     }
