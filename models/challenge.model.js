@@ -34,6 +34,14 @@ const ChallengeSchema = mongoose.Schema({
         type:Number,
         default:0.0
     },
+    datewise:{
+        type:Boolean,
+        default:false,
+    },
+    fixstartDate:{
+        type:Date,
+        default:null,
+    },
     totalCompleted:{        //total crowd who has completed the challenge
         type:Number,
         default:0
