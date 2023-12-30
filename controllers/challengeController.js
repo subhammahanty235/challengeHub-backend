@@ -310,9 +310,9 @@ exports.joinChallenge = async (req, res) => {
             await UCConnection.create({
                 challengeId: data.challengeId,
                 userId: userID,
-                startDate: new Date(),
+                startDate: challenge.datewise === true ? challenge.fixstartDate : new Date(),
                 totalnoOfDays: data.totalnoOfDays,
-                includeStartDate: data.includeStartDate,
+                includeStartDate:challenge.datewise === true? true : data.includeStartDate,
             })
 
             //update the challenge's total participants
