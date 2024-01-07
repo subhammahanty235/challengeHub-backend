@@ -16,6 +16,12 @@ app.use("/api/auth" , require('./routes/auth.route'))
 app.use('/api/user' , require('./routes/user.route'))
 app.use('/api/challenge' , require('./routes/challenge.route'))
 
+app.use('/api/admin' , require('./routes/adminroutes.routes'))
+
+
+//temp
+app.use("/api/email" , require("./emailSystem/sendtestEmail").router)
+
 app.listen(5000 , ()=>{
     console.log("App is running")
 })

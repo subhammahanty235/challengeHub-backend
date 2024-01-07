@@ -2,13 +2,13 @@ const { startOfDay, differenceInDays, isFriday, isDate } = require('date-fns');
 const { utcToZonedTime } = require('date-fns-tz');
 const moment = require('moment-timezone')
 exports.dayDifferenceCalculator = (startDate) => {
-  console.log(" day diff--------------------------------->>>>>>>>>>>>>>>>>>>>>")
-  console.log(startDate)
-  console.log(" day diff<<<<<<<<<<<<<<<--------------------------------->>>>>")
+  // console.log(" day diff--------------------------------->>>>>>>>>>>>>>>>>>>>>")
+  // console.log(startDate)
+  // console.log(" day diff<<<<<<<<<<<<<<<--------------------------------->>>>>")
 
   const startDateUTC = new Date(startDate);
   const currentDateUTC = new Date();
-  console.log(startDate)
+  // console.log(startDate)
 
 
   // Convert to Asia/Kolkata time zone
@@ -17,10 +17,10 @@ exports.dayDifferenceCalculator = (startDate) => {
   // const startDateIST = startDateUTC
   const currentDateIST = utcToZonedTime(currentDateUTC, timeZoneIST);
 
-  console.log("inside day difference function")
-  console.log("startDateIst"+ startDateIST);
-  console.log("cuurent"+ currentDateIST)
-  console.log("day differnce function complteed")
+  // console.log("inside day difference function")
+  // console.log("startDateIst"+ startDateIST);
+  // console.log("cuurent"+ currentDateIST)
+  // console.log("day differnce function complteed")
 
 
   // Set time components to zero for both dates

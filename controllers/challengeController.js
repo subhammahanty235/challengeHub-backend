@@ -402,58 +402,47 @@ exports.getDetailedDWCData = async (req, res) => {
             return res.status(400).json({ success: false, message: "You have already participated" })
         }
 
-        console.log("11111")
+        // console.log("11111")
         console.log(cuData.startDate)
 
         const startDate = UTCtoIST(cuData.startDate);
 
-        console.log("22222")
+      
 
         const currentDate = UTCtoIST(new Date());
         const includeStartDay = cuData.includeStartDate;
         const dwcDatas = cuData.DayWisecompletedOn;
         const totalNoDays = cuData.totalnoOfDays;
 
-        console.log("333333")
-
+       
 
         if ((startDate === currentDate) && includeStartDay === false) {
             res.status(200).json({ success: true, dataStatus: false, message: "No Data yet" })
         }
 
-        console.log("4444444")
+        
 
         // // now calculate how many days from the startDate to currentDate user has completed the tasks
         const dayNumbers = new Set(dwcDatas.map((obj) => obj.dayNumber));
         // console.log("1")
 
-        // const nextDay = new Date(startDate);
-        console.log("44444.252525")
+       
         console.log(startDate)
         console.log(new Date(startDate))
         const nextDay = startDate.clone().add(1, 'day');
-        console.log("444444.55555")
-        console.log("-------=====-------");
         // console.log(cuData.startDate.getDate() + 1);
         const nextDate = new Date(cuData.startDate);
         const stdday = new Date(cuData.startDate);
         nextDate.setDate(stdday.getDate() + 1);
         console.log(new Date(cuData.startDate))
 
-        console.log("tester 1111"+(includeStartDay ))
+        
         console.log( cuData.startDate)
         const sdTocd = dayDifferenceCalculator(includeStartDay === true ? new Date(cuData.startDate) : nextDate);  //startDate to currentdate difference
         // const sdTocd = dayDifferenceCalculator(includeStartDay === true ? "Con 1":"con2");  //startDate to currentdate difference
         
-        console.log("sdtocd" + sdTocd)
-        console.log("555555")
+     
         let allDates = [];
-        console.log("--------->")
-        console.log(startDate);
-        console.log(nextDay);
-
-        console.log(includeStartDay)
-        console.log("<---------")
         let date = includeStartDay === true ? startDate : nextDay;
         console.log(date)
         const stdr = startDate.toISOString().split('T')[0];
