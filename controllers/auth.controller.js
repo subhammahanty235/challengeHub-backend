@@ -18,14 +18,14 @@ exports.generateOtp = async (req, res) => {
         }
 
         const otp = Math.floor(10000 + Math.random() * 90000);
-        console.log(otp)
+        
         const to = await TempOtp.create({
             email: email,
             otp: otp,
             created: new Date(Date.now()),
             expiry: new Date(Date.now() + 2 * 60 * 1000)
         })
-        sendOtpMail(email, otp)
+        // sendOtpMail(email, otp)
         return res.status(200).json({
             success: true,
             too: to,

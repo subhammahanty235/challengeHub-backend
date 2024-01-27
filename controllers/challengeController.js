@@ -8,6 +8,8 @@ const { performanceCalcAlgorithm } = require('../utils/performanceCalculator');
 const moment = require('moment');
 const { joinedChallengeEmail } = require('../emailSystem/challengeEmail');
 
+
+
 exports.createChallenge = async (req, res) => {
     try {
         const { challengeData, includeStartDate } = req.body;
@@ -213,8 +215,6 @@ exports.marktaskasDone = async (req, res) => {
         }
 
     } catch (error) {
-        console.log("catch_");
-        console.log(error.message)
         res.status(400).json({ success: false, message: error.message })
     }
 }
@@ -254,7 +254,7 @@ exports.addNote = async (req, res) => {
             { new: true },
         )
 
-        console.log(ucc.DayWisecompletedOn)
+        
         res.status(200).json({ success: true, data: ucc.DayWisecompletedOn });
 
 
@@ -293,6 +293,7 @@ exports.joinChallenge = async (req, res) => {
         if (challenge.visibility === 'Protected') {
             isProtected = true;
         }
+        
         let verified = false;
         if (isProtected) {
             const security = await SecurityKey.findOne({ challengeId: data.challengeId });
@@ -323,13 +324,6 @@ exports.joinChallenge = async (req, res) => {
                 }
             })
 
-
-
-            console.log(checkUser)
-            console.log(checkUser)
-            console.log(challenge)
-            console.log(user)
-            console.log(user)
 
             joinedChallengeEmail(user.name , user.emailId , challenge)
 
@@ -402,75 +396,59 @@ exports.getDetailedDWCData = async (req, res) => {
             return res.status(400).json({ success: false, message: "You have already participated" })
         }
 
-        console.log("11111")
-        console.log(cuData.startDate)
 
         const startDate = UTCtoIST(cuData.startDate);
 
-        console.log("22222")
+      
 
         const currentDate = UTCtoIST(new Date());
         const includeStartDay = cuData.includeStartDate;
         const dwcDatas = cuData.DayWisecompletedOn;
         const totalNoDays = cuData.totalnoOfDays;
 
-        console.log("333333")
-
+       
 
         if ((startDate === currentDate) && includeStartDay === false) {
             res.status(200).json({ success: true, dataStatus: false, message: "No Data yet" })
         }
 
-        console.log("4444444")
+        
 
         // // now calculate how many days from the startDate to currentDate user has completed the tasks
         const dayNumbers = new Set(dwcDatas.map((obj) => obj.dayNumber));
         // console.log("1")
 
-        // const nextDay = new Date(startDate);
-        console.log("44444.252525")
-        console.log(startDate)
-        console.log(new Date(startDate))
+       
+       
         const nextDay = startDate.clone().add(1, 'day');
-        console.log("444444.55555")
-        console.log("-------=====-------");
         // console.log(cuData.startDate.getDate() + 1);
         const nextDate = new Date(cuData.startDate);
         const stdday = new Date(cuData.startDate);
         nextDate.setDate(stdday.getDate() + 1);
-        console.log(new Date(cuData.startDate))
+       
 
-        console.log("tester 1111"+(includeStartDay ))
-        console.log( cuData.startDate)
+        
+        
         const sdTocd = dayDifferenceCalculator(includeStartDay === true ? new Date(cuData.startDate) : nextDate);  //startDate to currentdate difference
         // const sdTocd = dayDifferenceCalculator(includeStartDay === true ? "Con 1":"con2");  //startDate to currentdate difference
         
-        console.log("sdtocd" + sdTocd)
-        console.log("555555")
+     
         let allDates = [];
-        console.log("--------->")
-        console.log(startDate);
-        console.log(nextDay);
-
-        console.log(includeStartDay)
-        console.log("<---------")
         let date = includeStartDay === true ? startDate : nextDay;
-        console.log(date)
+        
         const stdr = startDate.toISOString().split('T')[0];
-        console.log(stdr)
+        
         const formattedDatew = date.toISOString().split('T')[0];
-        console.log(formattedDatew)
+        
         const formattedDatee = nextDay.toISOString().split('T')[0];
-        console.log(formattedDatee)
+       
 
-        // console.log(date)
-
-        // console.log("2")
-        console.log(sdTocd)
+    
+        
         for (let i = 0; i < (sdTocd < totalNoDays ? sdTocd + 1 : totalNoDays + 1); i++) {
 
             const formattedDate = date.toISOString().split('T')[0];
-            console.log(formattedDate)
+            
             const dwcData = dwcDatas.find((data) => data.dayNumber === i)
             // console.log("2.1")
             let notes;
@@ -487,7 +465,7 @@ exports.getDetailedDWCData = async (req, res) => {
             date = date.clone().add(1, 'day')
             // date.setDate(date.getDate() + 1);
         }
-        // console.log("3")
+       
 
         res.status(200).json({ success: true, dataStatus: true, message: "Data processed", dates: allDates })
 
