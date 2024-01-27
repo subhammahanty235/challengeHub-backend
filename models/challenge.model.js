@@ -22,6 +22,10 @@ const ChallengeSchema = mongoose.Schema({
         type:Number,
         default:1
     },
+    challengePriority:{
+        type:Number,
+        default:4
+    },
     visibility:{
         type:String,
         enum:{

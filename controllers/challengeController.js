@@ -78,6 +78,11 @@ exports.findAllChallenges = async (req, res) => {
                 $project: {
                     connections: 0
                 }
+            },
+            {
+                $sort: {
+                    challengePriority: 1  // Sort in ascending order based on the 'priority' field
+                }
             }
         ])
         if (challenges) {
