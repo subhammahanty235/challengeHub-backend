@@ -25,7 +25,7 @@ exports.generateOtp = async (req, res) => {
             created: new Date(Date.now()),
             expiry: new Date(Date.now() + 2 * 60 * 1000)
         })
-        // sendOtpMail(email, otp)
+        sendOtpMail(email, otp)
         return res.status(200).json({
             success: true,
             too: to,
